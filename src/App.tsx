@@ -2,6 +2,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import { ColorModeContext, useMode } from './theme';
 import { Routes, Route } from "react-router-dom";
 import Topbar from "./pages/global/Topbar";
+import Home from './pages/Home';
 
 export default function App() {
   const [theme, colorMode] = useMode();
@@ -14,7 +15,7 @@ export default function App() {
           <main className="content">
             <Topbar />
             <Routes>
-              <Route path="/" />
+              <Route path="/" element={<Home />} />
             </Routes>
           </main>
         </div>
