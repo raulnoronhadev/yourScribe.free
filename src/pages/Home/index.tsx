@@ -1,18 +1,16 @@
-import { Box, IconButton, useTheme } from "@mui/material";
-import { useContext } from "react";
-import { ColorModeContext, tokens } from "../../theme";
+import { Box, useTheme } from "@mui/material";
+import { tokens } from "../../theme";
 import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
 
 export default function Home() {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const colorMode = useContext(ColorModeContext);
 
     return (
         <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="500px" width="100%" gap="30px" sx={{ bgcolor: colors.grey[800], borderRadius: 4 }}>
             <Typography variant="h1" fontWeight="700">
-                Transcription Software Online Free
+                Transcription Software Online
             </Typography>
             <Typography variant="h3" align="center" sx={{
                 color: colors.grey[200]

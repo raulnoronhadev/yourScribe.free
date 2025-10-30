@@ -5,10 +5,6 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
-
-const pages = ['Products', 'Pricing', 'Blog'];
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 export default function Topbar() {
     const theme = useTheme();
@@ -16,7 +12,7 @@ export default function Topbar() {
     const colorMode = useContext(ColorModeContext);
 
     return (
-        <Box display="flex" p={1} width="100%" height="80px" justifyContent="space-between">
+        <Box display="flex" width="100%" height="80px" justifyContent="space-between">
             <IconButton>
                 <Typography variant="h3" sx={{ p: 1 }}>
                     yourScribe
