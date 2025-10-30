@@ -18,7 +18,8 @@ export const tokens = (mode: PaletteMode) => ({
                 500: "#666666",
                 600: "#525252",
                 700: "#3d3d3d",
-                800: "#292929",
+                // 800: "#292929",
+                800: "#1b1e1f",
                 900: "#141414",
             },
             primary: {
@@ -204,9 +205,9 @@ export const ColorModeContext = createContext<ColorModeContextType>({
 });
 
 export const useMode = (): [Theme, ColorModeContextType] => {
-  const [mode, setMode] = useState<PaletteMode>("dark"); // Adiciona o tipo ao state
+  const [mode, setMode] = useState<PaletteMode>("dark"); 
 
-  const colorMode = useMemo<ColorModeContextType>( // Adiciona o tipo ao useMemo
+  const colorMode = useMemo<ColorModeContextType>(
     () => ({
       toggleColorMode: () =>
         setMode((prev) => (prev === "light" ? "dark" : "light")),
@@ -214,7 +215,6 @@ export const useMode = (): [Theme, ColorModeContextType] => {
     []
   );
 
-  // createTheme já retorna o tipo 'Theme'
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   
   return [theme, colorMode];
