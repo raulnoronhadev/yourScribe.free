@@ -45,7 +45,7 @@ export default function FileUploader() {
                     flexDirection: "column",
                     justifyContent: "center",
                     borderRadius: "10px",
-                    backgroundColor: isDragging ? "#f0f8ff" : colors.grey[800],
+                    backgroundColor: isDragging ? "#f0f8ff" : colors.grey[900],
                     color: "black",
                     height: "210px",
                     width: "560px",
