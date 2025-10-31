@@ -1,23 +1,26 @@
-import { useState } from "react";
-import type { DragEvent } from "react";
+import { useState, useRef } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
+// import List from '@mui/material/List';
+// import ListItem from '@mui/material/ListItem';
 import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import api from "../../services/api";
 
 export default function FileUploader() {
     const [files, setFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [error, setError] = useState<string>("");
+
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
         const droppedFiles: File[] = Array.from(e.dataTransfer.files);
         setFiles(droppedFiles);
-        console.log(files);
     };
 
     const handleDragOver = (e: DragEvent<HTMLDivElement>): void => {
@@ -27,6 +30,35 @@ export default function FileUploader() {
     const handleDragEnter = () => setIsDragging(true);
     const handleDragLeave = () => setIsDragging(false);
 
+    const handleFileSelect = (e: ChangeEvent<HTMLInputElement>): void => {
+        if (e.target.files) {
+            const selectedFiles: File[] = Array.from(e.target.files);
+            setFiles(selectedFiles);
+            setError("");
+        }
+    };
+
+    const handleButtonClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const uploadFiles = async () => {
+        handleButtonClick();
+        if (!files || files.length === 0) {
+            console.error("No files found");
+            return;
+        }
+        try {
+            const formData = new FormData();
+            formData.append('video', files[0]);
+            formData.append('language', 'en');
+            const response = await api.post('/transcribe-simple', formData);
+            console.log(response.data);
+        } catch (error) {
+            console.error('Upload failed', error);
+        }
+    };
+
     return (
         <Box sx={{
             m: 2,
@@ -34,6 +66,13 @@ export default function FileUploader() {
             borderRadius: "15px",
             p: 1,
         }}>
+            <input
+                type="file"
+                multiple
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                style={{ display: "none" }}
+            />
             <Box
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -69,6 +108,7 @@ export default function FileUploader() {
                 </Button>
                 <Typography variant="h3" sx={{ color: colors.grey[100], }}>Drag and drop files here</Typography>
                 <Button
+                    onClick={uploadFiles}
                     sx={{
                         p: 2,
                         bgcolor: colors.blueAccent[700],
