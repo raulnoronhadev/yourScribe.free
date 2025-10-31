@@ -6,12 +6,15 @@ import { tokens } from "../../theme";
 // import ListItem from '@mui/material/ListItem';
 import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
-import api from "../../services/api";
+import api from "../../api/api";
 
-export default function FileUploader() {
+interface FileUploaderProps {
+    onTranscriptionComplete: (data: Record<string, any>) => void;
+}
+
+export default function FileUploader({ onTranscriptionComplete }: FileUploaderProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [error, setError] = useState<string>("");
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -34,7 +37,6 @@ export default function FileUploader() {
         if (e.target.files) {
             const selectedFiles: File[] = Array.from(e.target.files);
             setFiles(selectedFiles);
-            setError("");
         }
     };
 
@@ -54,6 +56,7 @@ export default function FileUploader() {
             formData.append('language', 'en');
             const response = await api.post('/transcribe-simple', formData);
             console.log(response.data);
+            onTranscriptionComplete(response.data);
         } catch (error) {
             console.error('Upload failed', error);
         }
@@ -65,6 +68,8 @@ export default function FileUploader() {
             bgcolor: colors.grey[900],
             borderRadius: "15px",
             p: 1,
+            display: 'flex',
+            flexDirection: 'column',
         }}>
             <input
                 type="file"
