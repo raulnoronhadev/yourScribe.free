@@ -4,7 +4,6 @@ import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
 import { useState } from "react";
 
-// Defina o tipo conforme o que sua API retorna
 export interface TranscriptionResponse {
     success: boolean;
     transcription: string;
@@ -54,13 +53,12 @@ export default function Home() {
                     borderRadius: "10px",
                     backgroundColor: colors.grey[900],
                     color: "black",
-                    height: "210px",
-                    width: "560px",
+                    width: "100%",
                     p: 3,
                     gap: 1,
                     border: `1px dashed ${colors.blueAccent[500]}`,
                 }}>
-                    <Typography>
+                    <Typography sx={{ color: colors.primary[100] }}>
                         {transcriptionData?.transcription}
                     </Typography>
                 </Box>
