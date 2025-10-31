@@ -3,21 +3,7 @@ import { tokens } from "../../theme";
 import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
 import { useState } from "react";
-
-export interface TranscriptionResponse {
-    success: boolean;
-    transcription: string;
-    segments: Segment[];
-    language: string;
-    file_type: string;
-}
-
-export interface Segment {
-    id?: number;
-    start?: number;
-    end?: number;
-    text?: string;
-}
+import type { TranscriptionResponse } from "../../types/transcription";
 
 export default function Home() {
     const theme = useTheme();

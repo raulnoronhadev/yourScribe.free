@@ -1,4 +1,4 @@
-export interface TranscriptionSegment {
+export interface Segment {
   id: number;
   seek: number;
   start: number;
@@ -14,7 +14,7 @@ export interface TranscriptionSegment {
 export interface TranscriptionPart {
   part: number;
   text: string;
-  segments: TranscriptionSegment[];
+  segments: Segment[];
 }
 
 export interface TranscriptionResponse {
@@ -22,7 +22,7 @@ export interface TranscriptionResponse {
   transcription?: string;
   parts?: TranscriptionPart[];
   total_parts?: number;
-  segments?: TranscriptionSegment[];
+  segments?: Segment[];
   language?: string;
   file_type?: string;
   error?: string;

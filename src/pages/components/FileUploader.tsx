@@ -2,26 +2,10 @@ import { useState, useRef } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-// import List from '@mui/material/List';
-// import ListItem from '@mui/material/ListItem';
 import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import type { TranscriptionResponse } from "../../types/transcription";
 import api from "../../api/api";
-
-export interface TranscriptionResponse {
-    success: boolean;
-    transcription: string;
-    segments: Segment[];
-    language: string;
-    file_type: string;
-}
-
-export interface Segment {
-    id?: number;
-    start?: number;
-    end?: number;
-    text?: string;
-}
 
 interface FileUploaderProps {
     onTranscriptionComplete: (data: TranscriptionResponse) => void;
@@ -142,11 +126,6 @@ export default function FileUploader({ onTranscriptionComplete }: FileUploaderPr
                     }}>
                     Upload files
                 </Button>
-                {/* <List>
-                {files.map((file: File, index: number) => (
-                    <ListItem key={index}>{file.name}</ListItem>
-                ))}
-            </List> */}
             </Box >
         </Box>
     );
