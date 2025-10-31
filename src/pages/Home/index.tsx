@@ -4,13 +4,29 @@ import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
 import { useState } from "react";
 
+// Defina o tipo conforme o que sua API retorna
+export interface TranscriptionResponse {
+    success: boolean;
+    transcription: string;
+    segments: Segment[];
+    language: string;
+    file_type: string;
+}
+
+export interface Segment {
+    id?: number;
+    start?: number;
+    end?: number;
+    text?: string;
+}
+
 export default function Home() {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [transcriptBoxIsOpen, setTranscriptBoxIsOpen] = useState(false);
-    const [transcriptionData, setTranscriptionData] = useState<Record<string, any> | null>(null);
+    const [transcriptionData, setTranscriptionData] = useState<TranscriptionResponse | null>(null);
 
-    const handleTranscriptionComplete = (data: Record<string, any>) => {
+    const handleTranscriptionComplete = (data: TranscriptionResponse | null) => {
         setTranscriptionData(data);
         setTranscriptBoxIsOpen(true);
     };
@@ -45,7 +61,7 @@ export default function Home() {
                     border: `1px dashed ${colors.blueAccent[500]}`,
                 }}>
                     <Typography>
-                        { }
+                        {transcriptionData?.transcription}
                     </Typography>
                 </Box>
             )}

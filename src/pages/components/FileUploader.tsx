@@ -8,8 +8,23 @@ import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import api from "../../api/api";
 
+export interface TranscriptionResponse {
+    success: boolean;
+    transcription: string;
+    segments: Segment[];
+    language: string;
+    file_type: string;
+}
+
+export interface Segment {
+    id?: number;
+    start?: number;
+    end?: number;
+    text?: string;
+}
+
 interface FileUploaderProps {
-    onTranscriptionComplete: (data: Record<string, any>) => void;
+    onTranscriptionComplete: (data: TranscriptionResponse) => void;
 }
 
 export default function FileUploader({ onTranscriptionComplete }: FileUploaderProps) {
