@@ -19,7 +19,7 @@ export interface TranscriptionPart {
 
 export interface TranscriptionResponse {
   success?: boolean;
-  transcription?: string;
+  transcription: string;
   parts?: TranscriptionPart[];
   total_parts?: number;
   segments?: Segment[];
