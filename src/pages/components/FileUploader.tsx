@@ -5,7 +5,7 @@ import { tokens } from "../../theme";
 import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import type { TranscriptionResponse } from "../../types/transcription";
-import api from "../../api/api";
+import api from "../../services/api/axios-config/axiosConfig";
 
 interface FileUploaderProps {
     onTranscriptionComplete: (data: TranscriptionResponse) => void;

@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
 import { useState } from "react";
 import type { TranscriptionResponse } from "../../types/transcription";
+import TranscriptionTextBox from "../components/TranscriptionTextBox";
 
 export default function Home() {
     const theme = useTheme();
@@ -31,23 +32,7 @@ export default function Home() {
                 <FileUploader onTranscriptionComplete={handleTranscriptionComplete} />
             </Box>
             {transcriptBoxIsOpen && (
-                <Box sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    borderRadius: "10px",
-                    backgroundColor: colors.grey[900],
-                    color: "black",
-                    width: "100%",
-                    p: 3,
-                    gap: 1,
-                    border: `1px dashed ${colors.blueAccent[500]}`,
-                }}>
-                    <Typography sx={{ color: colors.primary[100] }}>
-                        {transcriptionData?.transcription}
-                    </Typography>
-                </Box>
+                <TranscriptionTextBox data={transcriptionData} />
             )}
         </Box>
     )
