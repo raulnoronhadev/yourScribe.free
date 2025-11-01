@@ -9,9 +9,10 @@ import api from "../../services/api/axios-config/axiosConfig";
 
 interface FileUploaderProps {
     onTranscriptionComplete: (data: TranscriptionResponse) => void;
+    setIsLoading: (value: boolean) => void;
 }
 
-export default function FileUploader({ onTranscriptionComplete }: FileUploaderProps) {
+export default function FileUploader({ onTranscriptionComplete, setIsLoading }: FileUploaderProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -53,11 +54,14 @@ export default function FileUploader({ onTranscriptionComplete }: FileUploaderPr
             const formData = new FormData();
             formData.append('video', files[0]);
             formData.append('language', 'en');
+            setIsLoading(true);
             const response = await api.post('/transcribe-simple', formData);
+            setIsLoading(false);
             console.log(response.data);
             onTranscriptionComplete(response.data);
         } catch (error) {
             console.error('Upload failed', error);
+            setIsLoading(false)
         }
     };
 
