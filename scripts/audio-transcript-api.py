@@ -85,7 +85,7 @@ def transcribe():
                 "error": f"File type not supported. Allowed: {list(ALLOWED_EXTENSIONS)}"
             }), 400
         
-        language = request.form.get('language', 'en')
+        language = request.form.get('language', 'pt')
         
         with tempfile.TemporaryDirectory() as temp_dir:
             file_ext = Path(media_file.filename).suffix
