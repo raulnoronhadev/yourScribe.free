@@ -20,10 +20,32 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
     const colors = tokens(theme.palette.mode);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+    const performUpload = async (file: File) => {
+        try {
+            const formData = new FormData();
+            formData.append('video', file);
+            formData.append('language', 'en');
+            setIsLoading(true);
+            const response = await api.post('/transcribe-simple', formData);
+            console.log(response.data)
+            setIsLoading(false);;
+            onTranscriptionComplete(response.data);
+        } catch (error) {
+            console.error('Upload failed', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
+        setIsDragging(false);
+
         const droppedFiles: File[] = Array.from(e.dataTransfer.files);
-        setFiles(droppedFiles);
+        if (droppedFiles.length > 0) {
+            setFiles(droppedFiles);
+            performUpload(droppedFiles[0]);
+        }
     };
 
     const handleDragOver = (e: DragEvent<HTMLDivElement>): void => {
@@ -34,34 +56,20 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
     const handleDragLeave = () => setIsDragging(false);
 
     const handleFileSelect = (e: ChangeEvent<HTMLInputElement>): void => {
-        if (e.target.files) {
+        if (e.target.files && e.target.files.length > 0) {
             const selectedFiles: File[] = Array.from(e.target.files);
             setFiles(selectedFiles);
+            performUpload(selectedFiles[0]);
         }
     };
 
-    const handleButtonClick = () => {
+    const handleIconClick = () => {
         fileInputRef.current?.click();
     };
 
-    const uploadFiles = async () => {
-        handleButtonClick();
-        if (!files || files.length === 0) {
-            console.error("No files found");
-            return;
-        }
-        try {
-            const formData = new FormData();
-            formData.append('video', files[0]);
-            formData.append('language', 'en');
-            setIsLoading(true);
-            const response = await api.post('/transcribe-simple', formData);
-            setIsLoading(false);
-            console.log(response.data);
-            onTranscriptionComplete(response.data);
-        } catch (error) {
-            console.error('Upload failed', error);
-            setIsLoading(false)
+    const handleManualUpload = () => {
+        if (files.length > 0) {
+            performUpload(files[0]);
         }
     };
 
@@ -101,22 +109,25 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
                     border: `1px dashed ${colors.blueAccent[500]}`,
                 }}
             >
-                <Button sx={{
-                    height: 70,
-                    width: 70,
-                    borderStyle: 'solid',
-                    borderColor: colors.blueAccent[700],
-                    borderRadius: 2,
-                    border: `1px solid ${colors.blueAccent[500]}`,
-                    '&:hover': {
-                        bgcolor: colors.grey[600],
-                    }
-                }}>
+                <Button
+                    onClick={handleIconClick}
+                    sx={{
+                        height: 70,
+                        width: 70,
+                        borderStyle: 'solid',
+                        borderColor: colors.blueAccent[700],
+                        borderRadius: 2,
+                        border: `1px solid ${colors.blueAccent[500]}`,
+                        '&:hover': {
+                            bgcolor: colors.grey[600],
+                        }
+                    }}>
                     <FileUploadOutlinedIcon sx={{ fontSize: 35 }} />
                 </Button>
                 <Typography variant="h3" sx={{ color: colors.grey[100], }}>Drag and drop files here</Typography>
                 <Button
-                    onClick={uploadFiles}
+                    onClick={handleManualUpload}
+                    disabled={files.length === 0}
                     sx={{
                         p: 2,
                         bgcolor: colors.blueAccent[700],
@@ -127,6 +138,10 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
                         textTransform: 'none',
                         fontSize: 14,
                         fontWeight: 600,
+                        '&:disabled': {
+                            bgcolor: colors.grey[700],
+                            cursor: 'not-allowed',
+                        }
                     }}>
                     Upload files
                 </Button>
