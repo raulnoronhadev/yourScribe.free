@@ -6,9 +6,13 @@ import subprocess
 import tempfile
 import os
 from pathlib import Path
+from groq import Groq
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)
+
+load_dotenv()
 
 MODEL_NAME = "base"  # "small", "medium" etc
 CHUNK_LENGTH = 15 * 60  
@@ -155,6 +159,85 @@ def transcribe_simple():
                 os.remove(temp_path)
     
     except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/improve-with-ia', methods=['POST'])
+def improve_with_ia():
+    """
+    Improve the audio transcription using Groq's AI. 
+    Makes the text more cohesive.
+    """
+    try:
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            return jsonify({
+                "success": False,
+                "error": "GROQ_API_KEY not configured"
+            }), 500
+
+        TranscriptionDataJSON = request.get_json()
+        if not TranscriptionDataJSON:
+            return jsonify({
+                "success": False,
+                "error": "No JSON data provided"
+            }), 400
+        
+        transcriptionText = TranscriptionDataJSON.get('transcription')
+        if not transcriptionText or transcriptionText.strip() == "":
+            return jsonify({
+                "success": False,
+                "error": "Transcription text is required"
+            }), 400
+        
+        client = Groq(api_key=api_key)
+        
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are an expert transcription editor specializing in correcting audio-to-text transcriptions.
+
+                    Your task is to improve the transcription by:
+                    1. Correcting transcription errors (misspelled words, wrong words that sound similar)
+                    2. Adding proper punctuation (periods, commas, question marks, exclamation points)
+                    3. Fixing grammar and sentence structure
+                    4. Improving text cohesion and readability
+                    5. Organizing the text into logical paragraphs when appropriate
+
+                    CRITICAL RULES YOU MUST FOLLOW:
+                    - DO NOT add new information that wasn't in the original transcription
+                    - DO NOT change the meaning or intent of the original message
+                    - DO NOT remove any important content
+                    - DO NOT interpret or expand on ideas - only clarify what's already there
+                    - ONLY fix errors and improve formatting
+
+                    Return ONLY the corrected text without any explanations, comments, or additional notes."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Transcription: {transcriptionText}"
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+        )
+        
+        improved_text = chat_completion.choices[0].message.content
+        
+        print("Original:", transcriptionText[:100], "...")
+        print("Improved:", improved_text[:100], "...")
+        
+        return jsonify({
+            "success": True,
+            "original": transcriptionText,
+            "improved": improved_text,
+            "model": "llama-3.3-70b-versatile"
+        })
+
+    except Exception as e:
+        print(f"Error in improve_with_ia: {str(e)}")
         return jsonify({
             "success": False,
             "error": str(e)

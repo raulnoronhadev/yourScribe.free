@@ -11,8 +11,9 @@ export default function Home() {
     const colors = tokens(theme.palette.mode);
     const [transcriptBoxIsOpen, setTranscriptBoxIsOpen] = useState(false);
     const [transcriptionData, setTranscriptionData] = useState<TranscriptionResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleTranscriptionComplete = (data: TranscriptionResponse | null) => {
+    const handleTranscriptionComplete = (data: TranscriptionResponse | null, uploadedFile?: File) => {
         setTranscriptionData(data);
         setTranscriptBoxIsOpen(true);
     };
@@ -29,8 +30,14 @@ export default function Home() {
                     No more paying ridiculous subscription fees to transcribe your audio files.
                     <br />We'll do it for free here!
                 </Typography>
-                <FileUploader onTranscriptionComplete={handleTranscriptionComplete} />
+                <FileUploader onTranscriptionComplete={handleTranscriptionComplete}
+                    setIsLoading={setIsLoading} />
             </Box>
+            {isLoading &&
+                <Typography>
+                    Loading...
+                </Typography>
+            }
             {transcriptBoxIsOpen && (
                 <TranscriptionTextBox data={transcriptionData} />
             )}
