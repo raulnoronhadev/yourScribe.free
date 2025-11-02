@@ -13,7 +13,7 @@ export default function Home() {
     const [transcriptionData, setTranscriptionData] = useState<TranscriptionResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleTranscriptionComplete = (data: TranscriptionResponse | null) => {
+    const handleTranscriptionComplete = (data: TranscriptionResponse | null, uploadedFile?: File) => {
         setTranscriptionData(data);
         setTranscriptBoxIsOpen(true);
     };

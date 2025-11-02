@@ -1,8 +1,11 @@
-import { Box, Typography, useTheme, Button, Divider } from "@mui/material";
+import { Box, Typography, useTheme, Button, IconButton } from "@mui/material";
 import { tokens } from "../../theme";
 import type { TranscriptionResponse } from "../../types/transcription";
 import { ImproveTextService } from "../../services/api/improveTranscription/ImproveTextService";
 import { useState } from "react";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ThumbsUpDownIcon from '@mui/icons-material/ThumbsUpDown';
+import ShareIcon from '@mui/icons-material/Share';
 
 interface ImproveTextResponse {
     success: boolean;
@@ -11,7 +14,12 @@ interface ImproveTextResponse {
     model: string;
 }
 
-export default function TranscriptionTextBox({ data }: { data: TranscriptionResponse | null }) {
+interface TranscriptionTextBoxProps {
+    data: TranscriptionResponse | null;
+    audioUrl?: string;
+}
+
+export default function TranscriptionTextBox({ data }: TranscriptionTextBoxProps) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [isImproving, setIsImproving] = useState(false);
@@ -66,27 +74,58 @@ export default function TranscriptionTextBox({ data }: { data: TranscriptionResp
                 bgcolor: colors.blueAccent[700],
                 p: 2,
                 borderRadius: 2,
+                width: '100%',
             }}>
+                <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    mb: 1,
+                }}>
+                    <IconButton>
+                        <ContentCopyIcon sx={{ color: colors.blueAccent[300] }} />
+                    </IconButton>
+                    <IconButton>
+                        <ThumbsUpDownIcon sx={{ color: colors.blueAccent[300] }} />
+                    </IconButton>
+                    <IconButton>
+                        <ShareIcon sx={{ color: colors.blueAccent[300] }} />
+                    </IconButton>
+                </Box>
                 <Typography sx={{
                     color: colors.primary[100],
                 }}>
                     {data?.transcription}
                 </Typography>
             </Box>
-            {isImproved &&
-                <Box
-                    sx={{
-                        bgcolor: colors.blueAccent[700],
-                        borderRadius: 2,
-                        p: isImproved ? 2 : 0,
-                        width: '100%',
-                        mt: 2,
+
+            {isImproved && (
+                <Box sx={{
+                    bgcolor: colors.blueAccent[700],
+                    borderRadius: 2,
+                    p: 2,
+                    width: '100%',
+                    mt: 2,
+                }}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        mb: 1,
                     }}>
+                        <IconButton>
+                            <ContentCopyIcon sx={{ color: colors.blueAccent[300] }} />
+                        </IconButton>
+                        <IconButton>
+                            <ThumbsUpDownIcon sx={{ color: colors.blueAccent[300] }} />
+                        </IconButton>
+                        <IconButton>
+                            <ShareIcon sx={{ color: colors.blueAccent[300] }} />
+                        </IconButton>
+                    </Box>
                     <Typography sx={{ color: colors.primary[100] }}>
                         {improvedText}
                     </Typography>
                 </Box>
-            }
+            )}
         </Box>
     )
 }
