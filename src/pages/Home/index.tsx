@@ -2,7 +2,7 @@ import { Box, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import Typography from '@mui/material/Typography';
 import FileUploader from "../components/FileUploader";
-import { useState } from "react";
+import { Activity, useState } from "react";
 import type { TranscriptionResponse } from "../../types/transcription";
 import TranscriptionTextBox from "../components/TranscriptionTextBox";
 
@@ -33,14 +33,15 @@ export default function Home() {
                 <FileUploader onTranscriptionComplete={handleTranscriptionComplete}
                     setIsLoading={setIsLoading} />
             </Box>
-            {isLoading &&
+            <Activity mode={isLoading ? 'visible' : 'hidden'}>
                 <Typography>
                     Loading...
                 </Typography>
-            }
-            {transcriptBoxIsOpen && (
+            </  Activity>
+            <Activity mode={transcriptBoxIsOpen ? 'visible' : 'hidden'}>
                 <TranscriptionTextBox data={transcriptionData} />
-            )}
+            </Activity>
+
         </Box>
     )
 }

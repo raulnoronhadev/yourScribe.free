@@ -19,8 +19,8 @@
     "@mui/material": "^7.3.4",
     "@wavesurfer/react": "^1.0.11",
     "axios": "^1.13.1",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
