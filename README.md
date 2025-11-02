@@ -272,7 +272,7 @@ Content-Type: application/json
 
 ---
 
-## 👤 Author
+## Author
 
 **Your Name**
 
