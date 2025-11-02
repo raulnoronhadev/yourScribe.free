@@ -31,7 +31,7 @@ YourScribe is an open-source transcription platform that converts audio and vide
 
 ---
 
-## Tech Stack
+## Stack
 
 ### Backend
 - **Python 3.8+**
@@ -71,75 +71,9 @@ git clone https://github.com/yourusername/yourscribe.git
 cd yourscribe
 ```
 
-### 2. Backend Setup
+### 2. Environment Variables
 
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create .env file
-touch .env
-```
-
-Add your Groq API key to `.env`:
-```env
-GROQ_API_KEY=your_groq_api_key_here
-```
-
-### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory (from project root)
-cd frontend
-
-# Install dependencies
-npm install
-```
-
----
-
-## ▶️ Running the Application
-
-### Start Backend Server
-
-```bash
-# From backend directory
-python app.py
-```
-
-Server will start at `http://localhost:5000`
-
-### Start Frontend Development Server
-
-```bash
-# From frontend directory
-npm run dev
-```
-
-Frontend will start at `http://localhost:5173` (or another port if 5173 is busy)
-
----
-
-## Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```env
-# Required
-GROQ_API_KEY=your_groq_api_key_here
-```
+Create a `.env` file in the main directory.
 
 To get your Groq API key:
 1. Visit [console.groq.com](https://console.groq.com)
@@ -147,11 +81,57 @@ To get your Groq API key:
 3. Navigate to API Keys
 4. Create a new API key
 
+### 3. Add your Groq API key to `.env`:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+### 4. Frontend Setup
+
+```
+# Navigate to frontend directory (from project root)
+cd frontend
+
+# Install dependencies
+npm install
+```
+
+### 5. Start Backend Server
+
+```
+# From scripts directory
+python audio-transcript-api.py
+```
+
+Server will start at `http://localhost:5000`
+
+### 6.  Start Frontend Development Server
+
+```bash
+# From frontend directory
+npm run dev
+```
+
+By default, Vite runs on port 5173, but you can specify a different port by adding the `server` property and setting a new value:
+
+```
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5174
+  }
+})
+```
+
 ---
 
 ## Usage
 
-1. **Open the Application**: Navigate to `http://localhost:5173` in your browser
+1. **Open the Application**: Navigate to `http://localhost:5173` (or other defined port) in your browser
 
 2. **Upload a File**: 
    - Drag and drop your audio/video file onto the upload area, or
@@ -274,7 +254,7 @@ Content-Type: application/json
 
 ## Author
 
-**Your Name**
+**Raul Noronha**
 
 - GitHub: [@raulnoronhadev](https://github.com/raulnoronhadev)
 - Email: raulnoronhadev@gmail.com
@@ -283,10 +263,10 @@ Content-Type: application/json
 
 ## Acknowledgments
 
+- [React](https://react.dev/)
 - [OpenAI Whisper](https://github.com/openai/whisper) - Robust speech recognition model
 - [Groq](https://groq.com) - Lightning-fast AI inference
-- [Flask](https://flask.palletsprojects.com/) - Web framework
-- [React](https://react.dev/) - UI library
+- [Flask](https://flask.palletsprojects.com/) - Web Python framework
 - [Material-UI](https://mui.com/) - React component library
 - [FFmpeg](https://ffmpeg.org/) - Media processing toolkit
 
