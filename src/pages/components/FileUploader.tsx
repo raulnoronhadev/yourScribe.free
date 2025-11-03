@@ -7,15 +7,15 @@ import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import type { TranscriptionResponse } from "../../types/transcription";
 import api from "../../services/api/axios-config/axiosConfig";
 
-interface FileUploaderProps {
+interface IFileUploaderProps {
     onTranscriptionComplete: (data: TranscriptionResponse) => void;
     setIsLoading: (value: boolean) => void;
+    files: File[];
+    setFiles: (files: File[]) => void;
 }
 
-export default function FileUploader({ onTranscriptionComplete, setIsLoading }: FileUploaderProps) {
-    const [files, setFiles] = useState<File[]>([]);
+export default function FileUploader({ onTranscriptionComplete, setIsLoading, files, setFiles }: IFileUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
-
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -28,7 +28,7 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
             setIsLoading(true);
             const response = await api.post('/transcribe-simple', formData);
             console.log(response.data)
-            setIsLoading(false);;
+            setIsLoading(false);
             onTranscriptionComplete(response.data);
         } catch (error) {
             console.error('Upload failed', error);
@@ -40,10 +40,9 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
     const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
         setIsDragging(false);
-
         const droppedFiles: File[] = Array.from(e.dataTransfer.files);
         if (droppedFiles.length > 0) {
-            setFiles(droppedFiles);
+            setFiles([...files, ...droppedFiles]);
             performUpload(droppedFiles[0]);
         }
     };
@@ -58,7 +57,7 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading }: 
     const handleFileSelect = (e: ChangeEvent<HTMLInputElement>): void => {
         if (e.target.files && e.target.files.length > 0) {
             const selectedFiles: File[] = Array.from(e.target.files);
-            setFiles(selectedFiles);
+            setFiles([...files, ...selectedFiles]);
             performUpload(selectedFiles[0]);
         }
     };

@@ -14,12 +14,12 @@ interface ImproveTextResponse {
     model: string;
 }
 
-interface TranscriptionTextBoxProps {
+interface ITranscriptionTextBoxProps {
     data: TranscriptionResponse | null;
-    audioUrl?: string;
+    files: File[];
 }
 
-export default function TranscriptionTextBox({ data }: TranscriptionTextBoxProps) {
+export default function TranscriptionTextBox({ data, files }: ITranscriptionTextBoxProps) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [isImproving, setIsImproving] = useState(false);
@@ -57,19 +57,36 @@ export default function TranscriptionTextBox({ data }: TranscriptionTextBoxProps
             p: 3,
             border: `1px solid ${colors.blueAccent[500]}`,
         }}>
-            <Button
-                onClick={handleImproveText}
-                sx={{
-                    bgcolor: colors.blueAccent[700],
-                    p: 1.5,
-                    color: colors.primary[100],
-                    textTransform: 'none',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    mb: 2,
-                }}>
-                {isImproving ? 'Improving...' : 'Improve this text'}
-            </Button>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                width: '100%',
+                alignItems: 'center'
+            }}>
+                {files[0] &&
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            color: colors.primary[100],
+                            fontWeight: 600,
+                        }}>
+                        {files[0].name}
+                    </Typography>
+                }
+                <Button
+                    onClick={handleImproveText}
+                    sx={{
+                        bgcolor: colors.blueAccent[700],
+                        p: 1.5,
+                        color: colors.primary[100],
+                        textTransform: 'none',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        mb: 2,
+                    }}>
+                    {isImproving ? 'Improving...' : 'Improve this text'}
+                </Button>
+            </Box>
             <Box sx={{
                 bgcolor: colors.blueAccent[700],
                 p: 2,
@@ -92,6 +109,7 @@ export default function TranscriptionTextBox({ data }: TranscriptionTextBoxProps
                     <Box sx={{
                         display: 'flex',
                         justifyContent: 'flex-end',
+                        alignItems: 'center',
                         mb: 1,
                     }}>
                         <IconButton>
@@ -111,7 +129,6 @@ export default function TranscriptionTextBox({ data }: TranscriptionTextBoxProps
                     {data?.transcription}
                 </Typography>
             </Box>
-
             <Activity mode={isImproved ? 'visible' : 'hidden'}>
                 <Box sx={{
                     bgcolor: colors.blueAccent[700],
