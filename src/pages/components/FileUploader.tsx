@@ -6,6 +6,8 @@ import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import type { TranscriptionResponse } from "../../types/transcription";
 import api from "../../services/api/axios-config/axiosConfig";
+import { useMutation } from "@tanstack/react-query";
+
 
 interface IFileUploaderProps {
     onTranscriptionComplete: (data: TranscriptionResponse) => void;
@@ -20,22 +22,29 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
     const colors = tokens(theme.palette.mode);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const performUpload = async (file: File) => {
-        try {
+    const uploadFileToTranscriptionEndpointMutation = useMutation({
+        mutationFn: async (file: File) => {
             const formData = new FormData();
             formData.append('video', file);
             formData.append('language', 'en');
             setIsLoading(true);
             const response = await api.post('/transcribe-simple', formData);
-            console.log(response.data)
-            setIsLoading(false);
-            onTranscriptionComplete(response.data);
-        } catch (error) {
+            return response.data;
+        },
+        onMutate: () => {
+            setIsLoading(true);
+        },
+        onSuccess: (data) => {
+            console.log(data);
+            onTranscriptionComplete(data);
+        },
+        onError: (error) => {
             console.error('Upload failed', error);
-        } finally {
+        },
+        onSettled: () => {
             setIsLoading(false);
         }
-    };
+    })
 
     const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
@@ -43,7 +52,7 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
         const droppedFiles: File[] = Array.from(e.dataTransfer.files);
         if (droppedFiles.length > 0) {
             setFiles([...files, ...droppedFiles]);
-            performUpload(droppedFiles[0]);
+            uploadFileToTranscriptionEndpointMutation.mutate(droppedFiles[0]);
         }
     };
 
@@ -58,7 +67,7 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
         if (e.target.files && e.target.files.length > 0) {
             const selectedFiles: File[] = Array.from(e.target.files);
             setFiles([...files, ...selectedFiles]);
-            performUpload(selectedFiles[0]);
+            uploadFileToTranscriptionEndpointMutation.mutate(selectedFiles[0]);
         }
     };
 
@@ -68,7 +77,7 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
 
     const handleManualUpload = () => {
         if (files.length > 0) {
-            performUpload(files[0]);
+            uploadFileToTranscriptionEndpointMutation.mutate(files[0]);
         }
     };
 
