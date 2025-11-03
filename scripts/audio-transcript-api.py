@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response, stream_with_context, jsonify
 from flask_cors import CORS
 import whisper
 import torch
@@ -8,11 +8,17 @@ import os
 from pathlib import Path
 from groq import Groq
 from dotenv import load_dotenv
+import json
+import uuid
+from threading import Thread
+import time
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
+
+job_progress = {}
 
 MODEL_NAME = "base"  # "small", "medium" etc
 CHUNK_LENGTH = 15 * 60  
@@ -59,6 +65,32 @@ def split_media(media_path, chunk_length, temp_dir):
     
     return chunks
 
+def generate_progress_stream(job_id):
+    """Generator function para SSE"""
+    while True:
+        if job_id in job_progress:
+            data = job_progress[job_id]
+            yield f"data: {json.dumps(data)}\n\n"
+            
+            # Se terminou, limpar e encerrar
+            if data.get('done', False):
+                del job_progress[job_id]
+                break
+        time.sleep(0.5)
+
+@app.route('/transcribe-progress/<job_id>')
+def transcribe_progress(job_id):
+    """Endpoint SSE para monitorar progresso"""
+    return Response(
+        stream_with_context(generate_progress_stream(job_id)),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive'
+        }
+    )
+
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
@@ -71,11 +103,103 @@ def health_check():
         }
     })
 
+@app.route('/transcribe-simple', methods=['POST'])
+def transcribe_simple():
+    """
+    Simplified endpoint for short media files (< 15 minutes)
+    Returns job_id immediately and processes in background
+    """
+    try:
+        media_file = request.files.get('video') or request.files.get('audio')
+        if not media_file:
+            return jsonify({"error": "No file uploaded. Use 'video' or 'audio' field"}), 400
+        if media_file.filename == '':
+            return jsonify({"error": "Invalid filename"}), 400 
+        if not is_allowed_file(media_file.filename):
+            return jsonify({
+                "error": f"File type not supported. Allowed: {list(ALLOWED_EXTENSIONS)}"
+            }), 400
+        
+        language = request.form.get('language', 'en')
+        file_ext = Path(media_file.filename).suffix
+        
+        job_id = str(uuid.uuid4())
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            media_file.save(temp_file.name)
+            temp_path = temp_file.name
+        
+        job_progress[job_id] = {
+            'percent': 0,
+            'status': 'Upload completo. Iniciando transcrição...',
+            'done': False
+        }
+        
+        def process_transcription():
+            try:
+                job_progress[job_id] = {
+                    'percent': 10,
+                    'status': 'Carregando modelo...',
+                    'done': False
+                }
+                
+                job_progress[job_id] = {
+                    'percent': 30,
+                    'status': 'Transcrevendo áudio...',
+                    'done': False
+                }
+                
+                result = model.transcribe(temp_path, language=language)
+                
+                job_progress[job_id] = {
+                    'percent': 90,
+                    'status': 'Processando resultado...',
+                    'done': False
+                }
+                
+                job_progress[job_id] = {
+                    'percent': 100,
+                    'status': 'Transcrição concluída!',
+                    'done': True,
+                    'result': {
+                        "success": True,
+                        "transcription": result["text"],
+                        "segments": result.get("segments", []),
+                        "language": language,
+                        "file_type": file_ext
+                    }
+                }
+                
+            except Exception as e:
+                job_progress[job_id] = {
+                    'percent': 0,
+                    'status': f'Erro: {str(e)}',
+                    'done': True,
+                    'error': str(e)
+                }
+            finally:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+        
+        thread = Thread(target=process_transcription)
+        thread.start()
+        
+        return jsonify({
+            "success": True,
+            "job_id": job_id,
+            "message": "Transcrição iniciada. Use /transcribe-progress/{job_id} para monitorar"
+        })
+    
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     """
-    Main endpoint for media transcription (video or audio)
-    Accepts 'video' or 'audio' field with the file
+    Main endpoint for media transcription with progress tracking
     """
     try:
         media_file = request.files.get('video') or request.files.get('audio')
@@ -90,30 +214,76 @@ def transcribe():
             }), 400
         
         language = request.form.get('language', 'pt')
+        job_id = str(uuid.uuid4())
         
         with tempfile.TemporaryDirectory() as temp_dir:
             file_ext = Path(media_file.filename).suffix
             media_path = os.path.join(temp_dir, f"input_media{file_ext}")
             media_file.save(media_path)
+            
+            # Inicializar progresso
+            job_progress[job_id] = {
+                'percent': 0,
+                'status': 'Dividindo áudio em partes...',
+                'done': False
+            }
+            
             chunks = split_media(media_path, CHUNK_LENGTH, temp_dir)
-            transcriptions = []
-            for idx, chunk in enumerate(chunks, start=1):
-                result = model.transcribe(chunk, language=language)
-                transcriptions.append({
-                    "part": idx,
-                    "text": result["text"],
-                    "segments": result.get("segments", [])
-                })
+            total_chunks = len(chunks)
             
-            full_text = " ".join([t["text"] for t in transcriptions])
+            def process_transcription():
+                try:
+                    transcriptions = []
+                    
+                    for idx, chunk in enumerate(chunks, start=1):
+                        # Atualizar progresso para cada chunk
+                        percent = int((idx / total_chunks) * 100)
+                        job_progress[job_id] = {
+                            'percent': percent,
+                            'status': f'Transcrevendo parte {idx} de {total_chunks}...',
+                            'done': False
+                        }
+                        
+                        result = model.transcribe(chunk, language=language)
+                        transcriptions.append({
+                            "part": idx,
+                            "text": result["text"],
+                            "segments": result.get("segments", [])
+                        })
+                    
+                    full_text = " ".join([t["text"] for t in transcriptions])
+                    
+                    # Concluído
+                    job_progress[job_id] = {
+                        'percent': 100,
+                        'status': 'Transcrição concluída!',
+                        'done': True,
+                        'result': {
+                            "success": True,
+                            "transcription": full_text,
+                            "parts": transcriptions,
+                            "total_parts": len(transcriptions),
+                            "language": language,
+                            "file_type": file_ext
+                        }
+                    }
+                    
+                except Exception as e:
+                    job_progress[job_id] = {
+                        'percent': 0,
+                        'status': f'Erro: {str(e)}',
+                        'done': True,
+                        'error': str(e)
+                    }
+            
+            # Iniciar processamento em background
+            thread = Thread(target=process_transcription)
+            thread.start()
             
             return jsonify({
                 "success": True,
-                "transcription": full_text,
-                "parts": transcriptions,
-                "total_parts": len(transcriptions),
-                "language": language,
-                "file_type": file_ext
+                "job_id": job_id,
+                "message": "Transcrição iniciada. Use /transcribe-progress/{job_id} para monitorar"
             })
     
     except Exception as e:
@@ -121,49 +291,7 @@ def transcribe():
             "success": False,
             "error": str(e)
         }), 500
-
-@app.route('/transcribe-simple', methods=['POST'])
-def transcribe_simple():
-    """
-    Simplified endpoint for short media files (< 15 minutes)
-    Accepts both video and audio files
-    """
-    try:
-        media_file = request.files.get('video') or request.files.get('audio')
-        if not media_file:
-            return jsonify({"error": "No file uploaded. Use 'video' or 'audio' field"}), 400
-        if media_file.filename == '':
-            return jsonify({"error": "Invalid filename"}), 400 
-        if not is_allowed_file(media_file.filename):
-            return jsonify({
-                "error": f"File type not supported. Allowed: {list(ALLOWED_EXTENSIONS)}"
-            }), 400
-        language = request.form.get('language', 'en')
-        file_ext = Path(media_file.filename).suffix
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
-            media_file.save(temp_file.name)
-            temp_path = temp_file.name
-        try:
-            result = model.transcribe(temp_path, language=language)
-            
-            return jsonify({
-                "success": True,
-                "transcription": result["text"],
-                "segments": result.get("segments", []),
-                "language": language,
-                "file_type": file_ext
-            })
-        finally:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
     
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
 @app.route('/improve-with-ia', methods=['POST'])
 def improve_with_ia():
     """
