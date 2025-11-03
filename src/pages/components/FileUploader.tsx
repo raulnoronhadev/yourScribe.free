@@ -17,52 +17,76 @@ interface IFileUploaderProps {
     setFiles: (files: File[]) => void;
 }
 
-export default function FileUploader({ onTranscriptionComplete, setIsLoading, files, setFiles }: IFileUploaderProps) {
+export default function FileUploader({ onTranscriptionComplete, files, setFiles }: IFileUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [transcriptionProgress, setTranscriptionProgress] = useState(0);
+    const [currentStatus, setCurrentStatus] = useState('');
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const uploadFileToTranscriptionEndpointMutation = useMutation({
-        mutationFn: async (file: File) => {
+    const uploadFileToTranscriptionEndpointMutation = useMutation<TranscriptionResponse, unknown, File>({
+        mutationFn: async (file: File): Promise<TranscriptionResponse> => {
             const formData = new FormData();
             formData.append('video', file);
             formData.append('language', 'en');
-
-            const response = await api.post('/transcribe-simple', formData, {
-                onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-                    if (progressEvent.total) {
-                        const percentCompleted = Math.round(
-                            (progressEvent.loaded * 100) / progressEvent.total
-                        );
-                        setUploadProgress(percentCompleted);
-                    } else {
-                        console.log('Bytes enviados:', progressEvent.loaded);
-                    }
-                },
-            });
-            return response.data;
-        },
-        onMutate: () => {
             setUploadProgress(0);
-            setIsLoading(true);
+            setTranscriptionProgress(0);
+            return new Promise<TranscriptionResponse>((resolve, reject) => {
+                api.post('/transcribe-simple', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.total) {
+                            const percent = Math.round(
+                                (progressEvent.loaded * 100) / progressEvent.total
+                            );
+                            setUploadProgress(percent);
+                        }
+                    },
+                })
+                    .then(response => {
+                        const jobId = response.data.job_id;
+                        setUploadProgress(100);
+                        setCurrentStatus('Upload completed. Process...');
+                        const eventSource = new EventSource(
+                            `${api.defaults.baseURL}/transcribe-progress/${jobId}`
+                        );
+                        eventSource.onmessage = (event) => {
+                            const data = JSON.parse(event.data);
+                            setTranscriptionProgress(data.percent);
+                            setCurrentStatus(data.status);
+
+                            if (data.done) {
+                                eventSource.close();
+
+                                if (data.error) {
+                                    reject(new Error(data.error));
+                                } else {
+                                    resolve(data.result as TranscriptionResponse);
+                                }
+                            }
+                        };
+                        eventSource.onerror = (error) => {
+                            eventSource.close();
+                            reject(error);
+                        };
+                    })
+                    .catch(reject);
+            });
         },
-        retry: 3,
-        retryDelay: 800,
         onSuccess: (data) => {
             console.log(data);
             onTranscriptionComplete(data);
-            setTimeout(() => setUploadProgress(0));
         },
         onError: (error) => {
-            console.error('Upload failed', error);
+            console.error('Transcription failed', error);
             setUploadProgress(0);
+            setTranscriptionProgress(0);
         },
-        onSettled: () => {
-            setIsLoading(false);
-        }
-    })
+    });
 
     const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
@@ -172,18 +196,40 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
                     Upload files
                 </Button>
             </Box >
-            {uploadFileToTranscriptionEndpointMutation.isPending &&
-                <Box sx={{ width: '100%', mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        Uploading... {uploadProgress}%
-                    </Typography>
-                    <LinearProgress
-                        variant="determinate"
-                        value={uploadProgress}
-                        sx={{ height: 8, borderRadius: 4 }}
-                    />
+            {uploadFileToTranscriptionEndpointMutation.isPending && (
+                <Box sx={{ width: '100%', mt: 2, p: 2 }}>
+                    <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color={colors.grey[100]}>
+                            Upload: {uploadProgress}%
+                        </Typography>
+                        <LinearProgress
+                            variant="determinate"
+                            value={uploadProgress}
+                            sx={{
+                                height: 8,
+                                borderRadius: 4,
+                                bgcolor: colors.grey[700],
+                            }}
+                        />
+                    </Box>
+                    {uploadProgress === 100 && (
+                        <Box>
+                            <Typography variant="body2" color={colors.grey[100]}>
+                                {currentStatus}
+                            </Typography>
+                            <LinearProgress
+                                variant="determinate"
+                                value={transcriptionProgress}
+                                sx={{
+                                    height: 8,
+                                    borderRadius: 4,
+                                    bgcolor: colors.grey[700],
+                                }}
+                            />
+                        </Box>
+                    )}
                 </Box>
-            }
+            )}
         </Box>
     );
 };
