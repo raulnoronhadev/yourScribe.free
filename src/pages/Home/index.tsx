@@ -38,11 +38,6 @@ export default function Home() {
                 </Typography>
                 <FileUploader onTranscriptionComplete={handleTranscriptionComplete} setIsLoading={setIsLoading} files={files} setFiles={handleFilesUpdate} />
             </Box>
-            <Activity mode={isLoading ? 'visible' : 'hidden'}>
-                <Typography>
-                    Loading...
-                </Typography>
-            </  Activity>
             <Activity mode={transcriptBoxIsOpen ? 'visible' : 'hidden'}>
                 <TranscriptionTextBox data={transcriptionData} files={files} />
             </Activity>

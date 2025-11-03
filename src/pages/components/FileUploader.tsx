@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import type { ChangeEvent, DragEvent } from "react";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography, useTheme, LinearProgress } from "@mui/material";
 import { tokens } from "../../theme";
 import Button from '@mui/material/Button';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import type { TranscriptionResponse } from "../../types/transcription";
 import api from "../../services/api/axios-config/axiosConfig";
 import { useMutation } from "@tanstack/react-query";
+import type { AxiosProgressEvent } from "axios";
 
 
 interface IFileUploaderProps {
@@ -18,6 +19,7 @@ interface IFileUploaderProps {
 
 export default function FileUploader({ onTranscriptionComplete, setIsLoading, files, setFiles }: IFileUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -27,19 +29,35 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
             const formData = new FormData();
             formData.append('video', file);
             formData.append('language', 'en');
-            setIsLoading(true);
-            const response = await api.post('/transcribe-simple', formData);
+
+            const response = await api.post('/transcribe-simple', formData, {
+                onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+                        setUploadProgress(percentCompleted);
+                    } else {
+                        console.log('Bytes enviados:', progressEvent.loaded);
+                    }
+                },
+            });
             return response.data;
         },
         onMutate: () => {
+            setUploadProgress(0);
             setIsLoading(true);
         },
+        retry: 3,
+        retryDelay: 800,
         onSuccess: (data) => {
             console.log(data);
             onTranscriptionComplete(data);
+            setTimeout(() => setUploadProgress(0));
         },
         onError: (error) => {
             console.error('Upload failed', error);
+            setUploadProgress(0);
         },
         onSettled: () => {
             setIsLoading(false);
@@ -154,6 +172,18 @@ export default function FileUploader({ onTranscriptionComplete, setIsLoading, fi
                     Upload files
                 </Button>
             </Box >
+            {uploadFileToTranscriptionEndpointMutation.isPending &&
+                <Box sx={{ width: '100%', mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Uploading... {uploadProgress}%
+                    </Typography>
+                    <LinearProgress
+                        variant="determinate"
+                        value={uploadProgress}
+                        sx={{ height: 8, borderRadius: 4 }}
+                    />
+                </Box>
+            }
         </Box>
     );
 };
