@@ -75,6 +75,7 @@ export default function TranscriptionTextBox({ data, files }: ITranscriptionText
                 }
                 <Button
                     onClick={handleImproveText}
+                    disabled={isImproved ? true : false}
                     sx={{
                         bgcolor: colors.blueAccent[700],
                         p: 1.5,
